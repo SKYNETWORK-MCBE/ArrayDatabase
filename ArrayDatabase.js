@@ -90,6 +90,9 @@ export class ArrayDatabase {
     [Symbol.iterator]() {
         return this.values();
     }
+    get size() {
+        return this.cache.reduce((acc, arr) => acc + arr.length, 0);
+    }
     trySave(values, swap = []) {
         let sizeOK = true;
         const stringified = JSON.stringify(values);
@@ -113,9 +116,6 @@ export class ArrayDatabase {
             world.setDynamicProperty(this.indexKey, this.currentKeyIndex);
             this.trySave(swap);
         }
-    }
-    get size() {
-        return this.cache.reduce((acc, arr) => acc + arr.length, 0);
     }
     load() {
         this.currentKeyIndex = world.getDynamicProperty(this.indexKey) ?? 0;

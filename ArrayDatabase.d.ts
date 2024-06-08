@@ -18,8 +18,8 @@ export declare class ArrayDatabase<T = any> {
     some(callbackfn: (value: T) => boolean): boolean;
     every(callbackfn: (value: T) => boolean): boolean;
     [Symbol.iterator](): IterableIterator<T>;
-    private trySave;
     get size(): number;
+    private trySave;
     private load;
     private unload;
     private get keyPrefix();

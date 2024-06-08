@@ -9,7 +9,7 @@ const db = new ArrayDatabase('test');
 
 db.put('hello');
 db.put('world');
-db.get(); // ["hello", "world"]
+db.getAll(); // ["hello", "world"]
 db.has('hello'); // true
 db.clear();
 db.size; // 0
@@ -21,8 +21,25 @@ const db = new ArrayDatabase<Vector3>('test');
 
 db.put({ x: 0, y: 0, z: 0 });
 db.put({ x: 1, y: 1, z: 1 });
-db.get(); // [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }]
+db.getAll(); // [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }]
 ```
+
+## Method/Properties
+- (template) `T`
+- `readonly id: string`
+- `get size(): number`
+- `getAll(): T[]`
+- `add(value: T): this`
+- `has(value: T): boolean`
+- `clear(): void`
+- `*values(): IterableIterator<T>`
+- `find(callbackfn: (value: T) => boolean): T | undefined`
+- `filter(callbackfn: (value: T) => boolean): T[]`
+- `map<U>(callbackfn: (value: T) => U): U[]`
+- `forEach(callbackfn: (value: T) => void): void`
+- `some(callbackfn: (value: T) => boolean): boolean`
+- `every(callbackfn: (value: T) => boolean): boolean`
+- `[Symbol.iterator](): IterableIterator<T>`
 
 ## Benchmark (put)
 ||x10|x100|

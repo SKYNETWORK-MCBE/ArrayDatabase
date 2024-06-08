@@ -25,12 +25,12 @@ export class ArrayDatabase<T = any> {
     return this;
   }
 
-  public has(value: T) {
+  public has(value: T): boolean {
     const locations = this.getAll();
     return locations.includes(value);
   }
 
-  public clear() {
+  public clear(): void {
     const keys = world.getDynamicPropertyIds();
     const prefix = this.keyPrefix;
     for (const key of keys) {
@@ -97,6 +97,10 @@ export class ArrayDatabase<T = any> {
     return this.values();
   }
 
+  public get size(): number {
+    return this.cache.reduce((acc, arr) => acc + arr.length, 0);
+  }
+
   private trySave(values: T[], swap: T[] = []) {
     let sizeOK = true;
     const stringified = JSON.stringify(values);
@@ -118,10 +122,6 @@ export class ArrayDatabase<T = any> {
       world.setDynamicProperty(this.indexKey, this.currentKeyIndex);
       this.trySave(swap);
     }
-  }
-
-  public get size(): number {
-    return this.cache.reduce((acc, arr) => acc + arr.length, 0);
   }
 
    private load() {
@@ -160,7 +160,7 @@ export class ArrayDatabase<T = any> {
   private get indexKey(): string {
     return `${ArrayDatabase.PREFIX}:index_${this.id}` as string;
   }
-  
+
   public get [Symbol.toStringTag](): string {
     return this.id;
   }
