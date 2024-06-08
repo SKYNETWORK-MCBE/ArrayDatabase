@@ -122,8 +122,6 @@ export class ArrayDatabase {
         const keys = world.getDynamicPropertyIds();
         const prefix = this.keyPrefix;
         for (const key of keys) {
-            if (key.includes('_index'))
-                console.warn(key);
             if (!key.startsWith(prefix))
                 continue;
             const index = Number(key.slice(prefix.length));
