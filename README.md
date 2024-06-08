@@ -1,5 +1,6 @@
 # ArrayDatabase
-A database manager for storing unlimited array in ScriptAPI
+A database manager for storing unlimited array in ScriptAPI  
+Compatible with `@minecraft/server@1.10.0+`
 
 ## Usage
 JavaScript
