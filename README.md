@@ -8,8 +8,8 @@ JavaScript
 /** @type {ArrayDatabase<string>} */
 const db = new ArrayDatabase('test');
 
-db.put('hello');
-db.put('world');
+db.add('hello');
+db.add('world');
 db.getAll(); // ["hello", "world"]
 db.has('hello'); // true
 db.clear();
@@ -20,8 +20,8 @@ TypeScript
 ```ts
 const db = new ArrayDatabase<Vector3>('test');
 
-db.put({ x: 0, y: 0, z: 0 });
-db.put({ x: 1, y: 1, z: 1 });
+db.add({ x: 0, y: 0, z: 0 });
+db.add({ x: 1, y: 1, z: 1 });
 db.getAll(); // [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 1 }]
 ```
 
