@@ -1,14 +1,37 @@
-import { world } from '@minecraft/server';
+import { Vector3, world } from '@minecraft/server';
 
-export class ArrayDatabase<T = any> {
-  public static readonly PROPERTY_MAX_SIZE = 12000;
-  public static readonly PREFIX = 'array';
+export type CreateDatabaseOptions<T, U> = {
+  PROPERTY_MAX_SIZE?: number;
+  PREFIX?: string;
+  transformer?: U extends void ? never : DataTransformer<T, U>
+}
+
+export interface DataTransformer<T, U> {
+  onWrite: (value: T) => U;
+  onRead: (value: U) => T;
+}
+
+/**
+ * T: The type of the value used in the database
+ * U: (optional) The type of the value stored in the world
+ */
+export class ArrayDatabase<T, U = void> {
+  public PROPERTY_MAX_SIZE = 12000;
+  public PREFIX = 'array';
 
   private readonly cache: T[][] = [];
   private cacheLoaded = false;
   private currentKeyIndex = 0;
+  private transformer: DataTransformer<T, U> | undefined;
 
-  constructor(public readonly id: string) {}
+  constructor(
+    public readonly id: string,
+    options: CreateDatabaseOptions<T, U> = {} as CreateDatabaseOptions<T, U>
+  ) {
+    if (options.PROPERTY_MAX_SIZE) this.PROPERTY_MAX_SIZE = options.PROPERTY_MAX_SIZE;
+    if (options.PREFIX) this.PREFIX = options.PREFIX;
+    if (options.transformer) this.transformer = options.transformer;
+  }
 
   public getAll(): T[] {
     if (!this.cacheLoaded) this.load();
@@ -101,15 +124,17 @@ export class ArrayDatabase<T = any> {
     return this.cache.reduce((acc, arr) => acc + arr.length, 0);
   }
 
-  private trySave(values: T[], swap: T[] = []) {
+  private trySave(values: T[], swap: T[] = [], index = this.currentKeyIndex): void {
     let sizeOK = true;
-    const stringified = JSON.stringify(values);
-    if (stringified.length > ArrayDatabase.PROPERTY_MAX_SIZE) {
+    const stringified = JSON.stringify(
+      this.transformer ? values.map(this.transformer.onWrite) : values
+    );
+    if (stringified.length > this.PROPERTY_MAX_SIZE) {
       sizeOK = false;
     } else {
       try {
-        world.setDynamicProperty(this.currentKey, stringified);
-        this.cache[this.currentKeyIndex] = values;
+        world.setDynamicProperty(`${this.keyPrefix}${index}`, stringified);
+        this.cache[index] = values;
       } catch (e) {
         sizeOK = false;
       }
@@ -132,12 +157,13 @@ export class ArrayDatabase<T = any> {
       if (!key.startsWith(prefix)) continue;
       const index = Number(key.slice(prefix.length));
       if (Number.isNaN(index)) {
-        console.error(`Found invalid key: ${key}`);
+        console.error(`[ArrayDatabase:${this.id}] Found invalid key: ${key}`);
         continue;
       }
-      this.cache[index] = JSON.parse(
+      const parsed = JSON.parse(
         world.getDynamicProperty(key) as string ?? '[]'
       );
+      this.cache[index] = this.transformer ? parsed.map(this.transformer.onRead) : parsed;
     }
     this.cacheLoaded = true;
   }
@@ -149,15 +175,11 @@ export class ArrayDatabase<T = any> {
   }
 
   private get keyPrefix(): string {
-    return `${ArrayDatabase.PREFIX}:${this.id}` as string;
-  }
-  
-  private get currentKey(): string {
-    return `${this.keyPrefix}${this.currentKeyIndex}`;
+    return `${this.PREFIX}:${this.id}`;
   }
 
   private get indexKey(): string {
-    return `${ArrayDatabase.PREFIX}:index_${this.id}` as string;
+    return `${this.PREFIX}:index_${this.id}`;
   }
 
   public get [Symbol.toStringTag](): string {

@@ -1,10 +1,22 @@
 import { world } from '@minecraft/server';
+/**
+ * T: The type of the value used in the database
+ * U: (optional) The type of the value stored in the world
+ */
 export class ArrayDatabase {
-    constructor(id) {
+    constructor(id, options = {}) {
         this.id = id;
+        this.PROPERTY_MAX_SIZE = 12000;
+        this.PREFIX = 'array';
         this.cache = [];
         this.cacheLoaded = false;
         this.currentKeyIndex = 0;
+        if (options.PROPERTY_MAX_SIZE)
+            this.PROPERTY_MAX_SIZE = options.PROPERTY_MAX_SIZE;
+        if (options.PREFIX)
+            this.PREFIX = options.PREFIX;
+        if (options.transformer)
+            this.transformer = options.transformer;
     }
     getAll() {
         if (!this.cacheLoaded)
@@ -93,16 +105,16 @@ export class ArrayDatabase {
     get size() {
         return this.cache.reduce((acc, arr) => acc + arr.length, 0);
     }
-    trySave(values, swap = []) {
+    trySave(values, swap = [], index = this.currentKeyIndex) {
         let sizeOK = true;
-        const stringified = JSON.stringify(values);
-        if (stringified.length > ArrayDatabase.PROPERTY_MAX_SIZE) {
+        const stringified = JSON.stringify(this.transformer ? values.map(this.transformer.onWrite) : values);
+        if (stringified.length > this.PROPERTY_MAX_SIZE) {
             sizeOK = false;
         }
         else {
             try {
-                world.setDynamicProperty(this.currentKey, stringified);
-                this.cache[this.currentKeyIndex] = values;
+                world.setDynamicProperty(`${this.keyPrefix}${index}`, stringified);
+                this.cache[index] = values;
             }
             catch (e) {
                 sizeOK = false;
@@ -126,10 +138,11 @@ export class ArrayDatabase {
                 continue;
             const index = Number(key.slice(prefix.length));
             if (Number.isNaN(index)) {
-                console.error(`Found invalid key: ${key}`);
+                console.error(`[ArrayDatabase:${this.id}] Found invalid key: ${key}`);
                 continue;
             }
-            this.cache[index] = JSON.parse(world.getDynamicProperty(key) ?? '[]');
+            const parsed = JSON.parse(world.getDynamicProperty(key) ?? '[]');
+            this.cache[index] = this.transformer ? parsed.map(this.transformer.onRead) : parsed;
         }
         this.cacheLoaded = true;
     }
@@ -139,17 +152,12 @@ export class ArrayDatabase {
         this.currentKeyIndex = 0;
     }
     get keyPrefix() {
-        return `${ArrayDatabase.PREFIX}:${this.id}`;
-    }
-    get currentKey() {
-        return `${this.keyPrefix}${this.currentKeyIndex}`;
+        return `${this.PREFIX}:${this.id}`;
     }
     get indexKey() {
-        return `${ArrayDatabase.PREFIX}:index_${this.id}`;
+        return `${this.PREFIX}:index_${this.id}`;
     }
     get [Symbol.toStringTag]() {
         return this.id;
     }
 }
-ArrayDatabase.PROPERTY_MAX_SIZE = 12000;
-ArrayDatabase.PREFIX = 'array';

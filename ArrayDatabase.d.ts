@@ -1,11 +1,25 @@
-export declare class ArrayDatabase<T = any> {
+export type CreateDatabaseOptions<T, U> = {
+    PROPERTY_MAX_SIZE?: number;
+    PREFIX?: string;
+    transformer?: U extends void ? never : DataTransformer<T, U>;
+};
+export interface DataTransformer<T, U> {
+    onWrite: (value: T) => U;
+    onRead: (value: U) => T;
+}
+/**
+ * T: The type of the value used in the database
+ * U: (optional) The type of the value stored in the world
+ */
+export declare class ArrayDatabase<T, U = void> {
     readonly id: string;
-    static readonly PROPERTY_MAX_SIZE = 12000;
-    static readonly PREFIX = "array";
+    PROPERTY_MAX_SIZE: number;
+    PREFIX: string;
     private readonly cache;
     private cacheLoaded;
     private currentKeyIndex;
-    constructor(id: string);
+    private transformer;
+    constructor(id: string, options?: CreateDatabaseOptions<T, U>);
     getAll(): T[];
     add(value: T): this;
     has(value: T): boolean;
@@ -23,7 +37,6 @@ export declare class ArrayDatabase<T = any> {
     private load;
     private unload;
     private get keyPrefix();
-    private get currentKey();
     private get indexKey();
     get [Symbol.toStringTag](): string;
 }
